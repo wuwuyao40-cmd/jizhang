@@ -26,7 +26,7 @@ import okhttp3.ResponseBody;
 public class CloudApi {
     static final String ENDPOINT = "https://ledger-sync-83297.app.workbuddy.host";
     static final String PUBKEY = "wbpk_iHfijba3qimoavp0MC3hLp_II5e4K8jMP8aO9CUarDoDp67lV1UW2PZ";
-    static final String AUTH_PAGE = ENDPOINT + "/app-auth.html";
+    static final String AUTH_PAGE = ENDPOINT + "/app-auth.html?sharecode=6EZ2DX7ZTO";
     static final String OWNER = "ledger-owner";
     private static final String PREFS = "ledger_native";
     private static final String KEY_TOKEN = "access_token";
