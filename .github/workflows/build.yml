@@ -27,9 +27,12 @@ jobs:
       # 新版 cmdline-tools 已废弃，会直接失败。ubuntu-latest 已预装 Android SDK。
       - name: Install Android SDK components
         run: |
-          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          export ANDROID_HOME=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
           echo "ANDROID_HOME=$ANDROID_HOME"
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          ls "$ANDROID_HOME" || true
+          command -v sdkmanager || true
+          (yes | sdkmanager --licenses > /dev/null 2>&1) || true
           sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build release APK
