@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         recycler.setAdapter(adapter);
 
         findViewById(R.id.loginBtn).setOnClickListener(v -> startLogin());
+        findViewById(R.id.manualBtn).setOnClickListener(v -> showManualTokenDialog());
         findViewById(R.id.logoutBtn).setOnClickListener(v -> {
             api.logout();
             records.clear();
@@ -124,6 +125,30 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "无法打开浏览器：" + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    /** 手动粘贴令牌（微信无法自动跳回 App 时的兜底） */
+    private void showManualTokenDialog() {
+        EditText et = new EditText(this);
+        et.setHint("粘贴桥接页显示的访问令牌");
+        et.setSingleLine(false);
+        et.setMinLines(3);
+        new AlertDialog.Builder(this)
+                .setTitle("手动输入令牌")
+                .setMessage("在浏览器完成登录后，复制页面上显示的令牌，粘贴到下方。")
+                .setView(et)
+                .setPositiveButton("登录", (d, w) -> {
+                    String token = et.getText().toString().trim();
+                    if (token.isEmpty()) {
+                        Toast.makeText(this, "令牌为空", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    api.saveSession(token, "");
+                    updateAuthUi();
+                    Toast.makeText(this, "已保存令牌", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     private void updateAuthUi() {
