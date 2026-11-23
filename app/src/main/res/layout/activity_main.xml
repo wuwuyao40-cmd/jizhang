@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F5F6F8">
+
+    <!-- 未登录 -->
+    <LinearLayout android:id="@+id/loggedOut"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center" android:padding="32dp">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="记账本" android:textSize="30sp" android:textStyle="bold" android:textColor="#3B6EF6"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="手机与电脑实时同步的个人账本" android:textSize="14sp" android:textColor="#687386"
+            android:layout_marginTop="8dp"/>
+        <Button android:id="@+id/loginBtn" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/login" android:layout_marginTop="36dp"/>
+    </LinearLayout>
+
+    <!-- 已登录 -->
+    <LinearLayout android:id="@+id/loggedIn"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:visibility="gone">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:padding="12dp" android:background="#FFFFFF"
+            android:gravity="center_vertical">
+            <TextView android:id="@+id/userTag" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="👤 已登录" android:textSize="14sp"/>
+            <TextView android:id="@+id/syncTag" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="☁ 同步中…" android:textSize="12sp" android:textColor="#687386"/>
+            <Button android:id="@+id/logoutBtn" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="退出" android:textSize="12sp" style="?android:attr/buttonBarButtonStyle"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:padding="8dp" android:background="#FFFFFF">
+            <Button android:id="@+id/addBtn" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="＋ 新增" android:layout_marginEnd="4dp"/>
+            <Button android:id="@+id/statsBtn" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="统计" android:layout_marginStart="4dp"/>
+        </LinearLayout>
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/refresh"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:clipToPadding="false" android:paddingBottom="16dp"/>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </LinearLayout>
+
+    <ProgressBar android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:visibility="gone"/>
+</FrameLayout>

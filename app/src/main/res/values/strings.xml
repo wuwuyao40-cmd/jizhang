@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">记账本</string>
+    <string name="tab_records">流水</string>
+    <string name="tab_stats">统计</string>
+    <string name="tab_settings">设置</string>
+    <string name="login">使用 WorkBuddy 登录</string>
+    <string name="add">新增</string>
+    <string name="refresh">刷新</string>
+</resources>
