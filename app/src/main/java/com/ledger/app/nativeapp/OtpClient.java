@@ -61,6 +61,15 @@ public class OtpClient {
         }
     }
 
+    /** 安全解析 JSON 字符串，把受检异常转成 IOException */
+    private JSONObject parse(String text) throws IOException {
+        try {
+            return new JSONObject(text);
+        } catch (Exception e) {
+            throw new IOException("服务端返回格式异常：" + e.getMessage());
+        }
+    }
+
     private String friendly(int code, String text) {
         String desc = text;
         try {
@@ -81,7 +90,7 @@ public class OtpClient {
             body.put("phone_number", phone);
             body.put("target", "ANY");
         } catch (Exception e) { throw new IOException(e.getMessage()); }
-        JSONObject res = new JSONObject(post("/v1/verification", body));
+        JSONObject res = parse(post("/v1/verification", body));
         String vid = res.optString("verification_id", "");
         if (vid.isEmpty()) throw new IOException("服务端未返回 verification_id");
         SendResult out = new SendResult();
@@ -98,7 +107,7 @@ public class OtpClient {
             vbody.put("verification_id", send.verificationId);
             vbody.put("verification_code", code.trim());
         } catch (Exception e) { throw new IOException(e.getMessage()); }
-        JSONObject vres = new JSONObject(post("/v1/verification/verify", vbody));
+        JSONObject vres = parse(post("/v1/verification/verify", vbody));
         String vtoken = vres.optString("verification_token", "");
         if (vtoken.isEmpty()) throw new IOException("验证码错误或已过期");
 
@@ -118,7 +127,7 @@ public class OtpClient {
             }
         } catch (Exception e) { throw new IOException(e.getMessage()); }
 
-        JSONObject session = new JSONObject(post(path, sbody));
+        JSONObject session = parse(post(path, sbody));
         String token = session.optString("access_token", "");
         if (token.isEmpty()) throw new IOException("登录失败：未拿到访问令牌");
 
