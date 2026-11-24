@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         adapter = new RecAdapter();
         recycler.setAdapter(adapter);
 
-        findViewById(R.id.loginBtn).setOnClickListener(v -> startLogin());
+        findViewById(R.id.loginBtn).setOnClickListener(v -> showPhoneLoginDialog());
         findViewById(R.id.manualBtn).setOnClickListener(v -> showManualTokenDialog());
         findViewById(R.id.demoBtn).setOnClickListener(v -> {
             api.saveSession(CloudApi.DEMO_TOKEN, "体验用户");
@@ -109,8 +109,9 @@ public class MainActivity extends AppCompatActivity {
             JSONObject o = new JSONObject(new String(raw, StandardCharsets.UTF_8));
             String token = o.optString("access_token", "");
             String name = o.optString("name", "");
+            String uid = o.optString("sub", o.optString("uid", ""));
             if (!TextUtils.isEmpty(token)) {
-                api.saveSession(token, name);
+                api.saveSession(token, name, uid);
                 updateAuthUi();
                 load();
                 Toast.makeText(this, "登录成功", Toast.LENGTH_SHORT).show();
@@ -122,14 +123,78 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startLogin() {
-        try {
-            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(CloudApi.AUTH_PAGE));
-            startActivity(i);
-            Toast.makeText(this, "请在浏览器中完成登录，成功后会自动返回", Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "无法打开浏览器：" + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+    /** 手机号验证码登录：App 内原生完成，不跳浏览器、不依赖微信/PKCE */
+    private void showPhoneLoginDialog() {
+        View v = LayoutInflater.from(this).inflate(R.layout.dialog_phone_login, null);
+        EditText etPhone = v.findViewById(R.id.etPhone);
+        EditText etCode = v.findViewById(R.id.etCode);
+        Button btnSend = v.findViewById(R.id.btnSendCode);
+
+        final OtpClient.SendResult[] sendRef = new OtpClient.SendResult[1];
+        btnSend.setOnClickListener(sv -> {
+            final String phone = etPhone.getText().toString().trim();
+            if (phone.replaceAll("\\D", "").length() < 11) {
+                Toast.makeText(this, "请输入 11 位手机号", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            btnSend.setEnabled(false);
+            btnSend.setText("发送中…");
+            exec.execute(() -> {
+                try {
+                    final OtpClient.SendResult r = new OtpClient().sendOtp(phone);
+                    runUi(() -> {
+                        sendRef[0] = r;
+                        btnSend.setText("已发送，60s");
+                        Toast.makeText(this, "验证码已发送" + (r.isExistingUser ? "" : "（新用户）"), Toast.LENGTH_LONG).show();
+                        btnSend.setEnabled(true);
+                    });
+                } catch (Exception e) {
+                    runUi(() -> {
+                        btnSend.setText("获取验证码");
+                        btnSend.setEnabled(true);
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+                }
+            });
+        });
+
+        new AlertDialog.Builder(this)
+                .setTitle("手机号登录")
+                .setMessage("验证码登录后，账本数据只归属你这个手机号，并实时同步到云端。")
+                .setView(v)
+                .setPositiveButton("登录", (d, w) -> {
+                    String phone = etPhone.getText().toString().trim();
+                    String code = etCode.getText().toString().trim();
+                    if (sendRef[0] == null) {
+                        Toast.makeText(this, "请先获取验证码", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (code.length() < 4) {
+                        Toast.makeText(this, "请输入验证码", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    final OtpClient.SendResult s = sendRef[0];
+                    exec.execute(() -> {
+                        try {
+                            final OtpClient.Result res = new OtpClient().verifyAndSignIn(phone, s, code, null);
+                            if (TextUtils.isEmpty(res.uid)) {
+                                runUi(() -> Toast.makeText(this, "登录失败：未获取到用户标识，无法隔离账本", Toast.LENGTH_LONG).show());
+                                return;
+                            }
+                            runUi(() -> {
+                                api.saveSession(res.accessToken, res.phone, res.uid);
+                                records.clear();
+                                adapter.notifyDataSetChanged();
+                                updateAuthUi();
+                                Toast.makeText(this, "登录成功，正在同步云端账本", Toast.LENGTH_SHORT).show();
+                            });
+                        } catch (Exception e) {
+                            runUi(() -> Toast.makeText(this, "登录失败：" + e.getMessage(), Toast.LENGTH_LONG).show());
+                        }
+                    });
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     /** 手动粘贴令牌（微信无法自动跳回 App 时的兜底） */

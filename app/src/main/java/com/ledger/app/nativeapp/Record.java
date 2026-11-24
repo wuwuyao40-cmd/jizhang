@@ -46,11 +46,11 @@ public class Record {
         return r;
     }
 
-    JSONObject toJson() {
+    JSONObject toJson(String ownerId) {
         JSONObject o = new JSONObject();
         try {
             o.put("rec_key", recKey != null && !recKey.isEmpty() ? recKey : newKey());
-            o.put("owner_id", CloudApi.OWNER);
+            o.put("owner_id", ownerId);
             o.put("period", period);
             o.put("category", category);
             o.put("rec_date", date);

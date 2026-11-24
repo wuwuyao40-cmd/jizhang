@@ -31,6 +31,7 @@ public class CloudApi {
     private static final String PREFS = "ledger_native";
     private static final String KEY_TOKEN = "access_token";
     private static final String KEY_USER = "user_name";
+    private static final String KEY_UID = "user_uid";
 
     /** 本地体验模式令牌：只在内存中演示，绝不写云端 */
     public static final String DEMO_TOKEN = "demo-local-session";
@@ -83,8 +84,21 @@ public class CloudApi {
     public void saveSession(String token, String userName) {
         prefs().edit().putString(KEY_TOKEN, token).putString(KEY_USER, userName).apply();
     }
+    /** 手机号登录：同时保存 uid，作为数据归属 owner_id */
+    public void saveSession(String token, String userName, String uid) {
+        prefs().edit().putString(KEY_TOKEN, token).putString(KEY_USER, userName)
+                .putString(KEY_UID, uid == null ? "" : uid).apply();
+    }
+    public String getUid() {
+        return prefs().getString(KEY_UID, "");
+    }
+    /** 当前数据归属：手机号用户用自己的 uid；历史兼容回退到 ledger-owner */
+    public String getOwnerId() {
+        String uid = getUid();
+        return uid.isEmpty() ? OWNER : uid;
+    }
     public void logout() {
-        prefs().edit().remove(KEY_TOKEN).remove(KEY_USER).apply();
+        prefs().edit().remove(KEY_TOKEN).remove(KEY_USER).remove(KEY_UID).apply();
     }
     private SharedPreferences prefs() {
         return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -118,7 +132,7 @@ public class CloudApi {
             return copy;
         }
         String url = ENDPOINT + "/.cloud/database/rest/ledger_records?select=*"
-                + "&owner_id=eq." + OWNER
+                + "&owner_id=eq." + getOwnerId()
                 + "&deleted=eq.false"
                 + "&order=rec_date.desc";
         String text = exec(authed(url).get().build());
@@ -138,7 +152,7 @@ public class CloudApi {
             return;
         }
         String url = ENDPOINT + "/.cloud/database/rest/ledger_records?on_conflict=owner_id,rec_key";
-        RequestBody rb = RequestBody.create(rec.toJson().toString(), JSON);
+        RequestBody rb = RequestBody.create(rec.toJson(getOwnerId()).toString(), JSON);
         Request req = authed(url).post(rb)
                 .header("Prefer", "resolution=merge-duplicates,return=representation,missing=default")
                 .build();
@@ -152,7 +166,7 @@ public class CloudApi {
             return;
         }
         String url = ENDPOINT + "/.cloud/database/rest/ledger_records?rec_key=eq." + recKey
-                + "&owner_id=eq." + OWNER;
+                + "&owner_id=eq." + getOwnerId();
         JSONObject obj = new JSONObject();
         obj.put("deleted", true);
         obj.put("updated_at", Record.nowIso());
