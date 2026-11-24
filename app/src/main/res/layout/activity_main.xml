@@ -16,6 +16,11 @@
             android:text="@string/login" android:layout_marginTop="36dp"/>
         <Button android:id="@+id/manualBtn" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="手动输入令牌" android:layout_marginTop="8dp"/>
+        <Button android:id="@+id/demoBtn" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="先体验功能（无需登录）" android:layout_marginTop="8dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="体验模式使用本地演示数据，不会写入云端账本" android:textSize="12sp"
+            android:textColor="#8A94A6" android:gravity="center" android:layout_marginTop="8dp"/>
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="若在微信中登录无法自动返回，请复制网页上的令牌，用此入口粘贴" android:textSize="12sp"
             android:textColor="#8A94A6" android:gravity="center" android:layout_marginTop="12dp"/>

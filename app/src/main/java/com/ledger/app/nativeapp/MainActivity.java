@@ -71,6 +71,11 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.loginBtn).setOnClickListener(v -> startLogin());
         findViewById(R.id.manualBtn).setOnClickListener(v -> showManualTokenDialog());
+        findViewById(R.id.demoBtn).setOnClickListener(v -> {
+            api.saveSession(CloudApi.DEMO_TOKEN, "体验用户");
+            updateAuthUi();
+            Toast.makeText(this, "已进入本地体验模式，数据不会写入云端", Toast.LENGTH_LONG).show();
+        });
         findViewById(R.id.logoutBtn).setOnClickListener(v -> {
             api.logout();
             records.clear();
@@ -156,14 +161,14 @@ public class MainActivity extends AppCompatActivity {
         loggedOut.setVisibility(in ? View.GONE : View.VISIBLE);
         loggedIn.setVisibility(in ? View.VISIBLE : View.GONE);
         if (in) {
-            userTag.setText("👤 " + (api.getUserName().isEmpty() ? "已登录" : api.getUserName()));
+            userTag.setText(api.isDemo() ? "👤 本地体验模式" : "👤 " + (api.getUserName().isEmpty() ? "已登录" : api.getUserName()));
             load();
         }
     }
 
     private void load() {
         if (!api.isLoggedIn()) return;
-        runUi(() -> syncTag.setText("同步中…"));
+        if (!api.isDemo()) runUi(() -> syncTag.setText("同步中…"));
         exec.execute(() -> {
             try {
                 List<Record> list = api.listRecords();
@@ -171,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                     records.clear();
                     records.addAll(list);
                     adapter.notifyDataSetChanged();
-                    syncTag.setText("☁ " + records.size() + " 笔");
+                    syncTag.setText(api.isDemo() ? "本地 " + records.size() + " 笔" : "☁ " + records.size() + " 笔");
                     refresh.setRefreshing(false);
                 });
             } catch (Exception e) {

@@ -32,6 +32,28 @@ public class CloudApi {
     private static final String KEY_TOKEN = "access_token";
     private static final String KEY_USER = "user_name";
 
+    /** 本地体验模式令牌：只在内存中演示，绝不写云端 */
+    public static final String DEMO_TOKEN = "demo-local-session";
+    private static final List<Record> DEMO_RECORDS = new ArrayList<>();
+    static {
+        DEMO_RECORDS.add(demo("2026-11-24", "餐饮", "午餐", -38.50, "微信"));
+        DEMO_RECORDS.add(demo("2026-11-23", "日常消费", "超市采购", -126.80, "支付宝"));
+        DEMO_RECORDS.add(demo("2026-11-22", "十一月工资", "工资到账", 8500.00, "银行卡"));
+        DEMO_RECORDS.add(demo("2026-11-21", "给小美女", "礼物", -200.00, "微信"));
+        DEMO_RECORDS.add(demo("2026-11-20", "固定支出", "房租", -1800.00, "银行卡"));
+    }
+    private static Record demo(String date, String category, String item, double amount, String account) {
+        Record r = new Record();
+        r.recKey = Record.newKey();
+        r.date = date;
+        r.category = category;
+        r.item = item;
+        r.amount = amount;
+        r.account = account;
+        r.period = "十一月工资";
+        return r;
+    }
+
     private final Context ctx;
     private final OkHttpClient http;
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -54,6 +76,9 @@ public class CloudApi {
     public boolean isLoggedIn() {
         String t = getToken();
         return t != null && t.length() > 0;
+    }
+    public boolean isDemo() {
+        return DEMO_TOKEN.equals(getToken());
     }
     public void saveSession(String token, String userName) {
         prefs().edit().putString(KEY_TOKEN, token).putString(KEY_USER, userName).apply();
@@ -87,6 +112,11 @@ public class CloudApi {
 
     /** 读取全部流水（未删除），按日期倒序 */
     public List<Record> listRecords() throws Exception {
+        if (isDemo()) {
+            List<Record> copy = new ArrayList<>();
+            for (Record r : DEMO_RECORDS) copy.add(r);
+            return copy;
+        }
         String url = ENDPOINT + "/.cloud/database/rest/ledger_records?select=*"
                 + "&owner_id=eq." + OWNER
                 + "&deleted=eq.false"
@@ -102,6 +132,11 @@ public class CloudApi {
 
     /** 新增或更新一条流水（按 owner_id+rec_key 冲突合并） */
     public void upsertRecord(Record rec) throws Exception {
+        if (isDemo()) {
+            if (rec.recKey == null || rec.recKey.isEmpty()) rec.recKey = Record.newKey();
+            DEMO_RECORDS.add(rec);
+            return;
+        }
         String url = ENDPOINT + "/.cloud/database/rest/ledger_records?on_conflict=owner_id,rec_key";
         RequestBody rb = RequestBody.create(rec.toJson().toString(), JSON);
         Request req = authed(url).post(rb)
@@ -112,6 +147,10 @@ public class CloudApi {
 
     /** 软删除：把 deleted 置 true */
     public void softDelete(String recKey) throws Exception {
+        if (isDemo()) {
+            DEMO_RECORDS.removeIf(r -> recKey.equals(r.recKey));
+            return;
+        }
         String url = ENDPOINT + "/.cloud/database/rest/ledger_records?rec_key=eq." + recKey
                 + "&owner_id=eq." + OWNER;
         JSONObject obj = new JSONObject();
